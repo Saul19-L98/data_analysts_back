@@ -450,3 +450,336 @@ Include in prompts:
 - **Monitor test performance** and optimize slow tests
 
 ---
+
+Awesome—let’s layer **MVC (Model–View–Controller)** on top of your FastAPI + UV setup and bake in solid practices. FastAPI isn’t “classic MVC” (it’s API-first), but we can map it cleanly:
+
+* **Model** → domain & persistence: Pydantic schemas (I/O) + SQLAlchemy ORM (DB).
+* **View** → what the client sees: serialized responses (JSON) or Jinja2 templates if you render HTML.
+* **Controller** → request orchestration: FastAPI routers/endpoints that call services and return views.
+
+Below is a drop-in section you can append to your project instructions.
+
+---
+
+# 🧭 MVC Architecture for FastAPI (Clean, Testable & Scalable)
+
+## MVC at a Glance (FastAPI mapping)
+
+* **Models**
+
+  * **Domain entities** (SQLAlchemy models, business rules).
+  * **DTOs**/**Schemas** (Pydantic models for request/response).
+* **Views**
+
+  * **API responses** (Pydantic response models → JSON).
+  * Optional **server-rendered HTML** (Jinja2 templates).
+* **Controllers**
+
+  * **Routers** (`APIRouter`) per resource/version that orchestrate:
+    validation → service calls → return view (schema/HTML).
+
+> Tip: Add a **Service** layer and **Repository** layer for cleaner separation:
+>
+> * **Service**: business logic (transactions, policies).
+> * **Repository**: data access (SQLAlchemy queries).
+>   Controllers never talk to the DB directly.
+
+---
+
+## 📁 Recommended Project Structure (MVC-friendly)
+
+```
+project/
+├── app/
+│   ├── main.py                         # App factory, middleware, router mounting
+│   ├── core/
+│   │   ├── config.py                   # Settings
+│   │   ├── db.py                       # Engine/session, migrations hook
+│   │   └── security.py                 # Auth/JWT, dependencies
+│   ├── models/                         # "M" (domain + persistence)
+│   │   ├── __init__.py
+│   │   ├── entities/                   # SQLAlchemy ORM models (domain/persistence)
+│   │   │   └── user.py
+│   │   └── schemas/                    # Pydantic I/O schemas (views’ shapes)
+│   │       └── user.py
+│   ├── repositories/                   # Data access abstraction
+│   │   └── user_repo.py
+│   ├── services/                       # Business rules / transactions
+│   │   └── user_service.py
+│   ├── views/                          # "V" layer: response mapping/renderers
+│   │   ├── __init__.py
+│   │   └── renderers.py                # JSON or HTML helpers (optional Jinja2)
+│   └── controllers/                    # "C" layer: API Routers
+│       └── v1/
+│           ├── __init__.py
+│           └── users.py
+├── tests/
+│   ├── unit/        # services, repositories, utils
+│   ├── api/         # controllers (TestClient/AsyncClient)
+│   └── e2e/         # cross-layer flows (optional)
+├── migrations/      # Alembic
+├── pyproject.toml
+└── uv.lock
+```
+
+**Naming conventions**
+
+* SQLAlchemy entities: `PascalCase` (e.g., `User`).
+* Pydantic schemas: `PascalCase` + suffix (`UserCreate`, `UserRead`).
+* Routers/controllers: plural modules (`users.py`), route prefix `/users`.
+* Services/Repos: singular resource + suffix (`user_service.py`, `user_repo.py`).
+
+---
+
+## 🔩 Wiring the Layers (concise example)
+
+### Model: SQLAlchemy entity (domain/persistence)
+
+```python
+# app/models/entities/user.py
+from sqlalchemy.orm import Mapped, mapped_column, DeclarativeBase
+from sqlalchemy import String, Integer, DateTime, func
+
+class Base(DeclarativeBase): ...
+
+class User(Base):
+    __tablename__ = "users"
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    email: Mapped[str] = mapped_column(String(255), unique=True, index=True)
+    name: Mapped[str] = mapped_column(String(100))
+    hashed_password: Mapped[str] = mapped_column(String(255))
+    created_at: Mapped[DateTime] = mapped_column(DateTime, server_default=func.now())
+```
+
+### Model: Pydantic schemas (I/O contracts = “View shapes”)
+
+```python
+# app/models/schemas/user.py
+from pydantic import BaseModel, EmailStr, Field
+from datetime import datetime
+
+class UserCreate(BaseModel):
+    email: EmailStr
+    password: str = Field(min_length=8)
+    name: str = Field(min_length=1, max_length=100)
+
+class UserRead(BaseModel):
+    id: int
+    email: EmailStr
+    name: str
+    created_at: datetime
+```
+
+### Repository: database access (no business logic)
+
+```python
+# app/repositories/user_repo.py
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select
+from app.models.entities.user import User
+from typing import Optional
+
+class UserRepository:
+    def __init__(self, session: AsyncSession):
+        self.session = session
+
+    async def get_by_email(self, email: str) -> Optional[User]:
+        res = await self.session.execute(select(User).where(User.email == email))
+        return res.scalar_one_or_none()
+
+    async def create(self, *, email: str, name: str, hashed_password: str) -> User:
+        user = User(email=email, name=name, hashed_password=hashed_password)
+        self.session.add(user)
+        await self.session.flush()  # get PK
+        return user
+```
+
+### Service: business rules, transactions, policies
+
+```python
+# app/services/user_service.py
+from fastapi import HTTPException, status
+from app.repositories.user_repo import UserRepository
+from app.core.security import hash_password
+from app.models.schemas.user import UserCreate
+from sqlalchemy.ext.asyncio import AsyncSession
+
+class UserService:
+    def __init__(self, repo: UserRepository, session: AsyncSession):
+        self.repo = repo
+        self.session = session
+
+    async def register(self, data: UserCreate):
+        if await self.repo.get_by_email(data.email):
+            raise HTTPException(status_code=409, detail="Email already exists")
+
+        user = await self.repo.create(
+            email=data.email,
+            name=data.name,
+            hashed_password=hash_password(data.password),
+        )
+        await self.session.commit()
+        await self.session.refresh(user)
+        return user
+```
+
+### Controller: orchestrates request → service → response
+
+```python
+# app/controllers/v1/users.py
+from fastapi import APIRouter, Depends, status
+from app.models.schemas.user import UserCreate, UserRead
+from app.repositories.user_repo import UserRepository
+from app.services.user_service import UserService
+from app.core.db import get_session
+from sqlalchemy.ext.asyncio import AsyncSession
+
+router = APIRouter(prefix="/api/v1/users", tags=["users"])
+
+def get_user_service(session: AsyncSession = Depends(get_session)):
+    repo = UserRepository(session)
+    return UserService(repo, session)
+
+@router.post("", response_model=UserRead, status_code=status.HTTP_201_CREATED)
+async def create_user(payload: UserCreate, svc: UserService = Depends(get_user_service)):
+    user = await svc.register(payload)
+    return UserRead.model_validate(user, from_attributes=True)
+```
+
+### Views (HTML optional)
+
+If you render HTML:
+
+```python
+# app/views/renderers.py
+from fastapi.templating import Jinja2Templates
+templates = Jinja2Templates(directory="templates")
+# controller would return templates.TemplateResponse("page.html", {...})
+```
+
+If you only ship JSON, your **Pydantic response models are your “Views.”**
+
+---
+
+## 🧪 Testing the Layers (fast & isolated)
+
+* **Repositories**: use an in-memory or containerized DB; assert SQL behavior (with rollbacks).
+* **Services**: mock repositories; assert business rules (no DB required).
+* **Controllers**: use `TestClient`/`AsyncClient`; assert HTTP status, schema shapes, headers.
+
+```python
+# tests/api/test_users.py
+import pytest
+from httpx import AsyncClient
+from app.main import app
+
+@pytest.mark.asyncio
+async def test_create_user_ok(async_client: AsyncClient):
+    resp = await async_client.post("/api/v1/users", json={
+        "email": "a@b.com", "password": "Passw0rd!", "name": "Alice"
+    })
+    assert resp.status_code == 201
+    body = resp.json()
+    assert body["email"] == "a@b.com"
+```
+
+> **Rule of thumb**
+>
+> * **Controllers**: zero business logic, zero DB logic.
+> * **Services**: business logic only, no HTTP objects.
+> * **Repositories**: persistence only, no business rules.
+
+---
+
+## 🧱 Cross-Cutting Best Practices (MVC + FastAPI)
+
+* **Dependency Injection**: provide `get_session`, `get_current_user`, `get_service()` factories via `Depends`.
+* **Transactions**: commit only in services; repositories do not commit.
+* **Validation**: Pydantic for input; never trust controller payloads beyond schema.
+* **Error Mapping**: Raise `HTTPException` in services for business conflicts (409, 422, 404).
+* **Pagination**: controller parses `limit/offset` → service → repo uses `LIMIT/OFFSET`.
+* **Idempotency**: for create endpoints if needed (e.g., via request id).
+* **AuthN/Z**: security dependencies at controller level; authorization decisions in service.
+* **Logging/Tracing**: add request IDs (middleware) and log at service boundaries.
+* **DTO ≠ ORM**: never return ORM objects raw; always map to Pydantic response models.
+* **Versioning**: mount routers under `/api/v1`, `/api/v2`.
+* **OpenAPI**: set response models & error schemas for consistent docs.
+
+---
+
+## ⚙️ App Factory & Router Mounting
+
+```python
+# app/main.py
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+from app.controllers.v1.users import router as users_router
+
+def create_app() -> FastAPI:
+    app = FastAPI(title="My API", version="1.0.0", docs_url="/docs", redoc_url="/redoc")
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=["*"], allow_credentials=True,
+        allow_methods=["*"], allow_headers=["*"],
+    )
+    app.include_router(users_router)
+    return app
+
+app = create_app()
+```
+
+---
+
+## 🗄️ Database & Migrations (async SQLAlchemy + Alembic)
+
+```python
+# app/core/db.py
+from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession
+from fastapi import Depends
+from app.core.config import settings
+
+engine = create_async_engine(settings.database_url, pool_pre_ping=True)
+SessionLocal = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
+
+async def get_session() -> AsyncSession:
+    async with SessionLocal() as session:
+        yield session
+```
+
+* **Migrations**: configure **Alembic** to use the same models metadata; run via `uv run alembic upgrade head`.
+
+---
+
+## 🧰 Linting, Types, CI (keep controllers skinny)
+
+* **black/isort/flake8/mypy** in dev deps.
+* Enforce **no DB imports** in controllers via lint rules or simple code review.
+* Unit tests for **services** carry most logic coverage; API tests validate integration.
+
+---
+
+## 🧱 Example Endpoint Checklist (Controller PR template)
+
+* [ ] Request/response schemas defined (Pydantic).
+* [ ] No business/DB logic in controller.
+* [ ] Service method exists and covered by unit tests.
+* [ ] Repository query covered by unit/integration tests.
+* [ ] Errors mapped to proper HTTP status (404/409/422/401/403).
+* [ ] Pagination, sorting, filtering (if list).
+* [ ] Docs visible in `/docs` and consistent.
+
+---
+
+## 🔌 Using UV with MVC
+
+* Keep the structure above; **UV** manages env & tooling as in your original guide.
+* Add dev scripts to `pyproject.toml` for repeatable flows:
+
+```toml
+[tool.uv.scripts]
+dev = "uvicorn app.main:app --reload"
+test = "pytest -q"
+migrate = "alembic upgrade head"
+```
+
+---
