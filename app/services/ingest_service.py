@@ -90,9 +90,8 @@ class IngestService:
         )
 
         return IngestResponse(
+            message="Archivo analizado con éxito",
             session_id=session_id,
-            agent_id=agent_id,
-            agent_alias_id=agent_alias_id,
             columns=analysis["columns"],
             dtypes=analysis["dtypes"],
             summary=summary,

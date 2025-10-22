@@ -69,15 +69,14 @@ Complete guide for testing the FastAPI backend using Postman.
 
 ## ✅ Expected Success Response
 
-**Status Code**: `201 Created`
+**Status Code**: `200 OK`
 
 **Response Body** (JSON):
 
 ```json
 {
+  "message": "Archivo analizado con éxito",
   "session_id": "sess_2025_10_21T20_45_30Z_a1b2c3",
-  "agent_id": "ABCDEFGHIJ",
-  "agent_alias_id": "TSTALIASID",
   "columns": [
     "date",
     "store_id",
@@ -240,7 +239,7 @@ Complete guide for testing the FastAPI backend using Postman.
   agent_alias_id: "YOUR_ALIAS_ID" (Text)
   ```
 
-**Expected Response**: `201 Created` (see above)
+**Expected Response**: `200 OK` with success message (see above)
 
 ---
 
@@ -729,8 +728,7 @@ curl http://localhost:8000/health
 
 | Status Code | Meaning | Cause |
 |-------------|---------|-------|
-| `200 OK` | Success (health check) | Server is healthy |
-| `201 Created` | Success (data ingested) | File processed and agent responded |
+| `200 OK` | Success (file analyzed) | File processed and agent responded successfully |
 | `400 Bad Request` | File parsing error | Invalid CSV/XLSX format |
 | `413 Payload Too Large` | File too big | File exceeds 25MB limit |
 | `415 Unsupported Media Type` | Wrong file type | Must be CSV or XLSX |
@@ -749,8 +747,14 @@ Add this JavaScript to the **Tests** tab to automatically validate responses:
 
 ```javascript
 // Test for successful upload
-pm.test("Status code is 201", function () {
-    pm.response.to.have.status(201);
+pm.test("Status code is 200", function () {
+    pm.response.to.have.status(200);
+});
+
+pm.test("Response has success message", function () {
+    var jsonData = pm.response.json();
+    pm.expect(jsonData).to.have.property('message');
+    pm.expect(jsonData.message).to.equal('Archivo analizado con éxito');
 });
 
 pm.test("Response has session_id", function () {
@@ -764,11 +768,10 @@ pm.test("Response has columns array", function () {
     pm.expect(jsonData.columns.length).to.be.above(0);
 });
 
-pm.test("Response has agent_reply", function () {
+pm.test("Response has agent_reply as object", function () {
     var jsonData = pm.response.json();
     pm.expect(jsonData).to.have.property('agent_reply');
-    pm.expect(jsonData.agent_reply).to.be.a('string');
-    pm.expect(jsonData.agent_reply.length).to.be.above(0);
+    pm.expect(jsonData.agent_reply).to.be.an('object');
 });
 
 pm.test("Response time is less than 30 seconds", function () {

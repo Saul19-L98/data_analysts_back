@@ -7,9 +7,8 @@ from pydantic import BaseModel, Field
 class IngestResponse(BaseModel):
     """Response model for the ingest endpoint."""
 
+    message: str = Field(..., description="Success message")
     session_id: str = Field(..., description="Unique session ID for the Bedrock conversation")
-    agent_id: str = Field(..., description="Bedrock Agent ID used")
-    agent_alias_id: str = Field(..., description="Bedrock Agent Alias ID used")
     columns: list[str] = Field(..., description="List of column names from the dataset")
     dtypes: dict[str, str] = Field(..., description="Data types for each column")
     summary: "DataSummary" = Field(..., description="Statistical summary of the dataset")

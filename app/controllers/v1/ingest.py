@@ -22,7 +22,7 @@ def get_ingest_service(settings: Settings = Depends(get_settings)) -> IngestServ
 @router.post(
     "",
     response_model=IngestResponse,
-    status_code=status.HTTP_201_CREATED,
+    status_code=status.HTTP_200_OK,
     responses={
         400: {"model": ErrorResponse, "description": "Bad request - parsing error"},
         413: {"model": ErrorResponse, "description": "Payload too large"},

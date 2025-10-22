@@ -2,6 +2,53 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.2.0] - 2025-10-22
+
+### ✨ Added
+- **Success Message**: New `message` field in response with "Archivo analizado con éxito"
+- User-friendly confirmation message for successful file analysis
+
+### 🔧 Changed
+- **Response Status Code**: Changed from `201 Created` to `200 OK` for successful requests
+- **Removed Fields**: Removed `agent_id` and `agent_alias_id` from response body (still required in request)
+- Simplified response structure focusing on analysis results
+
+### 📝 Updated
+- `POSTMAN_TESTING_GUIDE.md` updated with new response format and status codes
+- Postman test scripts updated to validate new response structure
+
+### 🎯 Impact
+**Before**:
+```json
+{
+  "session_id": "sess_...",
+  "agent_id": "7DTMDVQB1Y",
+  "agent_alias_id": "GCM9JR6C41",
+  "columns": [...],
+  ...
+}
+```
+Status: `201 Created`
+
+**After**:
+```json
+{
+  "message": "Archivo analizado con éxito",
+  "session_id": "sess_...",
+  "columns": [...],
+  ...
+}
+```
+Status: `200 OK`
+
+### 📦 Files Modified
+- `app/models/schemas/ingest.py` - Added `message` field, removed `agent_id` and `agent_alias_id`
+- `app/services/ingest_service.py` - Updated response building with success message
+- `app/controllers/v1/ingest.py` - Changed status code to `HTTP_200_OK`
+- `POSTMAN_TESTING_GUIDE.md` - Updated examples and test scripts
+
+---
+
 ## [1.1.0] - 2025-10-22
 
 ### ✨ Added
