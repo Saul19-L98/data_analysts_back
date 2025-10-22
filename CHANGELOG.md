@@ -2,6 +2,52 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.3.0] - 2025-10-22
+
+### ✨ Added
+- **Chart Transformation Endpoint**: New `/api/v1/charts/transform` endpoint
+- Transforms Bedrock Agent chart suggestions into shadcn/recharts compatible format
+- Support for line, bar, area, and pie charts
+- Automatic color assignment using shadcn chart color palette
+- Chart configuration with labels and colors for visualization
+- X-axis and Y-axis key extraction
+- Aggregation and grouping support
+
+### 📦 New Files
+- `app/models/schemas/chart.py` - Chart transformation schemas
+- `app/services/chart_transform_service.py` - Chart transformation logic
+- `app/controllers/v1/charts.py` - Chart transformation endpoint
+- `tests/test_charts.py` - Comprehensive chart transformation tests (5 tests)
+
+### 🎯 API Endpoint
+**POST /api/v1/charts/transform**
+- Input: Agent's `suggested_charts` array + `session_id`
+- Output: Charts formatted for shadcn with `chartConfig` and `chartData`
+- Status: `200 OK`
+- Message: "Gráficos transformados exitosamente"
+
+### 📊 Shadcn Format
+Transforms agent suggestions into:
+```json
+{
+  "chart_config": {
+    "total_sales": {
+      "label": "Total Sales",
+      "color": "hsl(var(--chart-1))"
+    }
+  },
+  "chart_data": [...],
+  "x_axis_key": "date",
+  "y_axis_keys": ["total_sales"]
+}
+```
+
+### ✅ Testing
+- 31 total tests passing (26 existing + 5 new)
+- Tests cover: success cases, multiple charts, validation, empty arrays, color assignments
+
+---
+
 ## [1.2.0] - 2025-10-22
 
 ### ✨ Added

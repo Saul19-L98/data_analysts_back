@@ -7,7 +7,7 @@ from fastapi.responses import JSONResponse
 
 from app.core.config import get_settings
 from app.core.exceptions import AppException
-from app.controllers.v1 import ingest
+from app.controllers.v1 import charts, ingest
 
 
 @asynccontextmanager
@@ -77,6 +77,7 @@ def create_app() -> FastAPI:
 
     # Include routers
     app.include_router(ingest.router, prefix=settings.api_v1_prefix)
+    app.include_router(charts.router, prefix=settings.api_v1_prefix)
 
     # Health check endpoint
     @app.get("/health", tags=["health"])
