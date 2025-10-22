@@ -781,12 +781,430 @@ pm.test("Response time is less than 30 seconds", function () {
 
 ---
 
-## 📚 Additional Resources
+## � Chart Transformation Endpoint
+
+### Overview
+
+After analyzing your file with `/api/v1/ingest`, you can transform the agent's chart suggestions into shadcn/recharts compatible format.
+
+### Test: Transform Charts
+
+**Purpose**: Convert Bedrock Agent chart suggestions to frontend-ready format
+
+**Endpoint**: `POST http://localhost:8000/api/v1/charts/transform`
+
+---
+
+### Step-by-Step Setup
+
+#### 1. Create New Request
+- Name: `Transform Charts`
+- Method: `POST`
+- URL: `http://localhost:8000/api/v1/charts/transform`
+
+#### 2. Configure Headers
+- Click the **"Headers"** tab
+- Add header:
+  - KEY: `Content-Type`
+  - VALUE: `application/json`
+
+#### 3. Configure Body
+- Click the **"Body"** tab
+- Select **"raw"** radio button
+- Select **"JSON"** from the dropdown (right side)
+
+#### 4. Sample Request Body
+
+**Basic Example** (using paper_sales.csv):
+```json
+{
+  "session_id": "sess_2025_10_22T05_49_19Z_caf83587",
+  "suggested_charts": [
+    {
+      "title": "Monthly Paper Sales Trend",
+      "chart_type": "line",
+      "parameters": {
+        "x_axis": "date",
+        "y_axis": "total_sales",
+        "aggregations": [
+          {
+            "column": "total_sales",
+            "func": "sum"
+          }
+        ],
+        "sort": {
+          "by": "date",
+          "order": "asc"
+        }
+      },
+      "insight": "Shows sales patterns over the month",
+      "priority": "high"
+    }
+  ]
+}
+```
+
+**Multiple Charts Example**:
+```json
+{
+  "session_id": "sess_2025_10_22T05_49_19Z_caf83587",
+  "suggested_charts": [
+    {
+      "title": "Sales by Paper Type",
+      "chart_type": "bar",
+      "parameters": {
+        "x_axis": "paper_type",
+        "y_axis": "quantity",
+        "aggregations": [{"column": "quantity", "func": "sum"}]
+      },
+      "insight": "Compare sales across paper types"
+    },
+    {
+      "title": "Revenue Trend",
+      "chart_type": "area",
+      "parameters": {
+        "x_axis": "date",
+        "y_axis": "total_sales",
+        "aggregations": [{"column": "total_sales", "func": "sum"}]
+      },
+      "insight": "Cumulative revenue over time"
+    }
+  ]
+}
+```
+
+---
+
+### Expected Response
+
+**Status Code**: `200 OK`
+
+**Response Body**:
+```json
+{
+  "message": "Gráficos transformados exitosamente",
+  "session_id": "sess_2025_10_22T05_49_19Z_caf83587",
+  "charts": [
+    {
+      "title": "Monthly Paper Sales Trend",
+      "description": "Shows sales patterns over the month",
+      "chart_type": "line",
+      "chart_config": {
+        "total_sales": {
+          "label": "Total Sales",
+          "color": "hsl(var(--chart-1))"
+        }
+      },
+      "chart_data": [
+        {
+          "note": "Data structure placeholder",
+          "description": "Use the chart parameters to query your actual dataset",
+          "x_axis": "date",
+          "y_axis_keys": ["total_sales"],
+          "aggregations": [{"column": "total_sales", "func": "sum"}],
+          "filters": [],
+          "sort": {"by": "date", "order": "asc"}
+        }
+      ],
+      "x_axis_key": "date",
+      "y_axis_keys": ["total_sales"],
+      "trend_percentage": null
+    }
+  ],
+  "total_charts": 1
+}
+```
+
+---
+
+### Understanding the Response
+
+#### Key Fields
+
+| Field | Description |
+|-------|-------------|
+| `message` | Success message in Spanish |
+| `session_id` | Same session ID from your request |
+| `charts` | Array of transformed charts |
+| `total_charts` | Count of successfully transformed charts |
+
+#### Chart Object Structure
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `title` | string | Chart title from agent |
+| `description` | string | Insight/description |
+| `chart_type` | string | `line`, `bar`, `area`, or `pie` |
+| `chart_config` | object | Shadcn config with colors and labels |
+| `chart_data` | array | Data structure (placeholder) |
+| `x_axis_key` | string | Column name for X axis |
+| `y_axis_keys` | array | Column names for Y axis |
+| `trend_percentage` | number | Trend calculation (if available) |
+
+#### Chart Config Example
+
+```json
+{
+  "total_sales": {
+    "label": "Total Sales",
+    "color": "hsl(var(--chart-1))"
+  },
+  "quantity": {
+    "label": "Quantity",
+    "color": "hsl(var(--chart-2))"
+  }
+}
+```
+
+The `chart_config` is ready to use with shadcn chart components!
+
+---
+
+### Complete Workflow Example
+
+#### Step 1: Upload & Analyze File
+```
+POST /api/v1/ingest
+- Upload: paper_sales.csv
+- Get response with session_id and agent_reply
+```
+
+#### Step 2: Extract Suggested Charts
+From the ingest response:
+```json
+{
+  "session_id": "sess_...",
+  "agent_reply": {
+    "suggested_charts": [
+      { "title": "...", "chart_type": "line", ... }
+    ]
+  }
+}
+```
+
+#### Step 3: Transform Charts
+```
+POST /api/v1/charts/transform
+Body: {
+  "session_id": "sess_...",
+  "suggested_charts": [...from agent_reply...]
+}
+```
+
+#### Step 4: Use in Frontend
+The response is ready for shadcn/recharts:
+```tsx
+<ChartContainer config={chart.chart_config}>
+  <LineChart data={chart.chart_data}>
+    <XAxis dataKey={chart.x_axis_key} />
+    {chart.y_axis_keys.map(key => (
+      <Line dataKey={key} stroke={`var(--color-${key})`} />
+    ))}
+  </LineChart>
+</ChartContainer>
+```
+
+---
+
+### Postman Test Scripts
+
+Add to the **Tests** tab for automatic validation:
+
+```javascript
+// Validate response structure
+pm.test("Status code is 200", function () {
+    pm.response.to.have.status(200);
+});
+
+pm.test("Response has success message", function () {
+    var jsonData = pm.response.json();
+    pm.expect(jsonData.message).to.equal('Gráficos transformados exitosamente');
+});
+
+pm.test("Response has session_id", function () {
+    var jsonData = pm.response.json();
+    pm.expect(jsonData).to.have.property('session_id');
+});
+
+pm.test("Charts array exists and has items", function () {
+    var jsonData = pm.response.json();
+    pm.expect(jsonData.charts).to.be.an('array');
+    pm.expect(jsonData.total_charts).to.be.a('number');
+    pm.expect(jsonData.charts.length).to.equal(jsonData.total_charts);
+});
+
+pm.test("Each chart has required fields", function () {
+    var jsonData = pm.response.json();
+    jsonData.charts.forEach(function(chart) {
+        pm.expect(chart).to.have.property('title');
+        pm.expect(chart).to.have.property('chart_type');
+        pm.expect(chart).to.have.property('chart_config');
+        pm.expect(chart).to.have.property('x_axis_key');
+        pm.expect(chart).to.have.property('y_axis_keys');
+        pm.expect(chart.y_axis_keys).to.be.an('array');
+    });
+});
+
+pm.test("Chart config has proper structure", function () {
+    var jsonData = pm.response.json();
+    var firstChart = jsonData.charts[0];
+    var config = firstChart.chart_config;
+    
+    Object.keys(config).forEach(function(key) {
+        pm.expect(config[key]).to.have.property('label');
+        pm.expect(config[key]).to.have.property('color');
+        pm.expect(config[key].color).to.include('hsl(var(--chart-');
+    });
+});
+```
+
+---
+
+### Common Test Scenarios
+
+#### Scenario 1: Single Line Chart
+```json
+{
+  "session_id": "test_session_1",
+  "suggested_charts": [
+    {
+      "title": "Daily Sales Trend",
+      "chart_type": "line",
+      "parameters": {
+        "x_axis": "date",
+        "y_axis": "sales",
+        "aggregations": [{"column": "sales", "func": "sum"}]
+      }
+    }
+  ]
+}
+```
+
+#### Scenario 2: Multiple Bar Charts
+```json
+{
+  "session_id": "test_session_2",
+  "suggested_charts": [
+    {
+      "title": "Sales by Category",
+      "chart_type": "bar",
+      "parameters": {
+        "x_axis": "category",
+        "aggregations": [{"column": "sales", "func": "sum"}]
+      }
+    },
+    {
+      "title": "Units Sold by Store",
+      "chart_type": "bar",
+      "parameters": {
+        "x_axis": "store_id",
+        "aggregations": [{"column": "units_sold", "func": "sum"}]
+      }
+    }
+  ]
+}
+```
+
+#### Scenario 3: Area Chart with Grouping
+```json
+{
+  "session_id": "test_session_3",
+  "suggested_charts": [
+    {
+      "title": "Revenue by Product Line",
+      "chart_type": "area",
+      "parameters": {
+        "x_axis": "month",
+        "group_by": ["product_line"],
+        "aggregations": [{"column": "revenue", "func": "sum"}]
+      }
+    }
+  ]
+}
+```
+
+---
+
+### Error Responses
+
+#### Missing session_id (422)
+```json
+{
+  "detail": [
+    {
+      "type": "missing",
+      "loc": ["body", "session_id"],
+      "msg": "Field required"
+    }
+  ]
+}
+```
+
+#### Invalid chart_type (422)
+```json
+{
+  "detail": [
+    {
+      "type": "literal_error",
+      "loc": ["body", "suggested_charts", 0, "chart_type"],
+      "msg": "Input should be 'line', 'bar', 'area' or 'pie'"
+    }
+  ]
+}
+```
+
+---
+
+### Tips for Testing
+
+1. **Save session_id**: After calling `/ingest`, save the session_id for transformation
+2. **Use Environment Variables**: Store `session_id` in Postman environment
+3. **Copy from Ingest Response**: Use the exact `suggested_charts` structure from agent
+4. **Test Multiple Charts**: Send 2-3 charts at once to test batch transformation
+5. **Check Colors**: Verify that each data series has a unique color assignment
+6. **Validate Structure**: Ensure `chart_config` matches your frontend expectations
+
+---
+
+### Postman Collection JSON
+
+Add this request to your collection:
+
+```json
+{
+  "name": "Transform Charts",
+  "request": {
+    "method": "POST",
+    "header": [
+      {
+        "key": "Content-Type",
+        "value": "application/json"
+      }
+    ],
+    "body": {
+      "mode": "raw",
+      "raw": "{\n  \"session_id\": \"{{session_id}}\",\n  \"suggested_charts\": [\n    {\n      \"title\": \"Sales Trend\",\n      \"chart_type\": \"line\",\n      \"parameters\": {\n        \"x_axis\": \"date\",\n        \"y_axis\": \"total_sales\",\n        \"aggregations\": [{\"column\": \"total_sales\", \"func\": \"sum\"}]\n      }\n    }\n  ]\n}"
+    },
+    "url": {
+      "raw": "http://localhost:8000/api/v1/charts/transform",
+      "protocol": "http",
+      "host": ["localhost"],
+      "port": "8000",
+      "path": ["api", "v1", "charts", "transform"]
+    }
+  }
+}
+```
+
+---
+
+## �📚 Additional Resources
 
 - **API Documentation**: http://localhost:8000/docs (Swagger UI)
 - **Alternative Docs**: http://localhost:8000/redoc (ReDoc)
 - **Health Check**: http://localhost:8000/health
-- **Sample Data**: `sample_data.csv` in the project root
+- **Sample Data**: `sample_data.csv` and `paper_sales.csv` in the project root
+- **Chart Guide**: See `CHART_TRANSFORMATION_GUIDE.md` for detailed shadcn integration
 
 ---
 
