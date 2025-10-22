@@ -31,6 +31,9 @@ class TransformChartRequest(BaseModel):
 
     session_id: str = Field(..., description="Session ID from ingest response")
     suggested_charts: list[SuggestedChart] = Field(..., description="Charts suggested by agent")
+    dataset: list[dict[str, Any]] | None = Field(
+        None, description="Optional dataset as array of records for immediate chart data generation"
+    )
 
 
 class ShadcnChartConfig(BaseModel):

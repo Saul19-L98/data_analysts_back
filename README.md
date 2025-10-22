@@ -224,7 +224,48 @@ MAX_FILE_SIZE_MB=50
 
 ## Resources 📚
 
+### Documentation
+- **[Testing Summary](docs/TESTING_SUMMARY.md)** - Quick reference for all testing docs
+- **[Postman Testing Guide](docs/POSTMAN_TESTING_GUIDE.md)** - Test /ingest endpoint with file uploads
+- **[Chart Transform with Dataset](docs/CHART_TRANSFORM_DATASET_TESTING.md)** - **NEW v1.4.0**: Test chart data processing
+- **[JSON Parsing Improvements](docs/JSON_PARSING_IMPROVEMENTS.md)** - Technical: JSON parsing system
+- **[Chart Data Processing](docs/CHART_DATA_PROCESSING.md)** - Technical: Data processing pipeline
+
+### External Resources
 - [FastAPI Documentation](https://fastapi.tiangolo.com/)
 - [AWS Bedrock Agents](https://docs.aws.amazon.com/bedrock/latest/userguide/agents.html)
 - [Pandas Documentation](https://pandas.pydata.org/docs/)
 - [UV Package Manager](https://github.com/astral-sh/uv)
+
+## Testing 🧪
+
+### Run Unit Tests
+```bash
+uv run pytest
+```
+
+### Test with Postman
+See [POSTMAN_TESTING_GUIDE.md](docs/POSTMAN_TESTING_GUIDE.md) for complete testing instructions.
+
+### Quick Test Scripts
+```bash
+# Test JSON parsing with truncated responses
+uv run python test_json_parsing.py
+
+# Test chart data processing
+uv run python test_chart_processing.py
+```
+
+## Recent Updates 🆕
+
+### v1.4.0 (Current)
+- ✨ **Chart data processing**: Include dataset in transform request for fully processed chart data
+- 🔧 **Pandas integration**: Automatic filtering, aggregation, grouping, and sorting
+- 📊 **Ready-to-render data**: Chart data can be passed directly to shadcn/recharts
+- 📝 **Complete documentation**: New testing guide for data processing feature
+
+### v1.3.0
+- 🐛 **Fixed JSON parsing**: 4-strategy system handles truncated Bedrock responses
+- 📈 **Improved reliability**: Progressive fallback for incomplete JSON
+- 🔍 **Debug logging**: Track which parsing strategy succeeds
+

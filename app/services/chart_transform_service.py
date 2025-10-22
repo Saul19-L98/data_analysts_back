@@ -1,5 +1,7 @@
 """Service for transforming agent chart suggestions to shadcn format."""
 from typing import Any
+import pandas as pd
+from datetime import datetime
 
 from app.models.schemas.chart import (
     ShadcnChartConfig,
@@ -26,23 +28,26 @@ class ChartTransformService:
     ]
 
     def transform_charts(
-        self, suggested_charts: list[SuggestedChart], session_data: dict[str, Any] | None = None
+        self, suggested_charts: list[SuggestedChart], dataset: list[dict[str, Any]] | None = None
     ) -> list[TransformedChart]:
         """
         Transform multiple chart suggestions into shadcn format.
 
         Args:
             suggested_charts: List of chart suggestions from agent
-            session_data: Optional session data containing the analyzed dataset
+            dataset: Optional dataset as list of records for generating actual chart data
 
         Returns:
             List of transformed charts ready for shadcn visualization
         """
         transformed = []
 
+        # Convert dataset to DataFrame if provided
+        df = pd.DataFrame(dataset) if dataset else None
+
         for idx, chart in enumerate(suggested_charts):
             try:
-                transformed_chart = self._transform_single_chart(chart, idx)
+                transformed_chart = self._transform_single_chart(chart, idx, df)
                 transformed.append(transformed_chart)
             except Exception as e:
                 # Log error but continue processing other charts
@@ -51,13 +56,16 @@ class ChartTransformService:
 
         return transformed
 
-    def _transform_single_chart(self, chart: SuggestedChart, color_index: int) -> TransformedChart:
+    def _transform_single_chart(
+        self, chart: SuggestedChart, color_index: int, df: pd.DataFrame | None = None
+    ) -> TransformedChart:
         """
         Transform a single chart suggestion.
 
         Args:
             chart: Chart suggestion from agent
             color_index: Index for color selection
+            df: Optional DataFrame with actual data
 
         Returns:
             Transformed chart in shadcn format
@@ -73,9 +81,11 @@ class ChartTransformService:
         # Extract y-axis keys for the chart
         y_axis_keys = self._extract_y_axis_keys(params)
 
-        # Generate sample/placeholder data structure
-        # In a real scenario, this would query actual data based on parameters
-        chart_data = self._generate_data_structure(params)
+        # Generate actual chart data or placeholder
+        if df is not None:
+            chart_data = self._process_data(df, params)
+        else:
+            chart_data = self._generate_data_structure(params)
 
         return TransformedChart(
             title=chart.title,
@@ -157,6 +167,91 @@ class ChartTransformService:
                     keys.append(key)
 
         return keys if keys else ["value"]
+
+    def _process_data(self, df: pd.DataFrame, params: Any) -> list[dict[str, Any]]:
+        """
+        Process DataFrame according to chart parameters and return chart-ready data.
+
+        Args:
+            df: Source DataFrame
+            params: Chart parameters (filters, aggregations, sorting, etc.)
+
+        Returns:
+            List of data points ready for shadcn/recharts
+        """
+        # Make a copy to avoid modifying original
+        working_df = df.copy()
+
+        # Step 1: Apply filters
+        if params.filters:
+            for filter_condition in params.filters:
+                col = filter_condition.get("column")
+                op = filter_condition.get("op")
+                value = filter_condition.get("value")
+
+                if col not in working_df.columns:
+                    continue
+
+                # Convert date strings if needed
+                if "date" in col.lower() or "time" in col.lower():
+                    if working_df[col].dtype == "object":
+                        working_df[col] = pd.to_datetime(working_df[col], errors="coerce")
+                    value = pd.to_datetime(value, errors="coerce")
+
+                # Apply filter operation
+                if op == ">=":
+                    working_df = working_df[working_df[col] >= value]
+                elif op == "<=":
+                    working_df = working_df[working_df[col] <= value]
+                elif op == "==":
+                    working_df = working_df[working_df[col] == value]
+                elif op == ">":
+                    working_df = working_df[working_df[col] > value]
+                elif op == "<":
+                    working_df = working_df[working_df[col] < value]
+                elif op == "!=":
+                    working_df = working_df[working_df[col] != value]
+                elif op == "in":
+                    working_df = working_df[working_df[col].isin(value)]
+
+        # Step 2: Apply aggregations
+        if params.aggregations and len(params.aggregations) > 0:
+            # Group by x_axis or group_by fields
+            group_cols = []
+            if params.x_axis and params.x_axis in working_df.columns:
+                group_cols.append(params.x_axis)
+            if params.group_by:
+                group_cols.extend([g for g in params.group_by if g in working_df.columns])
+
+            if group_cols:
+                # Perform aggregation
+                agg_dict = {}
+                for agg in params.aggregations:
+                    col = agg.get("column")
+                    func = agg.get("func", "sum")
+
+                    if col in working_df.columns:
+                        agg_dict[col] = func
+
+                if agg_dict:
+                    working_df = working_df.groupby(group_cols, as_index=False).agg(agg_dict)
+
+        # Step 3: Apply sorting
+        if params.sort:
+            sort_col = params.sort.get("column") or params.x_axis
+            sort_order = params.sort.get("order", "asc")
+
+            if sort_col and sort_col in working_df.columns:
+                ascending = sort_order.lower() == "asc"
+                working_df = working_df.sort_values(by=sort_col, ascending=ascending)
+
+        # Step 4: Convert dates to strings for JSON serialization
+        for col in working_df.columns:
+            if pd.api.types.is_datetime64_any_dtype(working_df[col]):
+                working_df[col] = working_df[col].dt.strftime("%Y-%m-%d")
+
+        # Step 5: Convert to list of dictionaries
+        return working_df.to_dict(orient="records")
 
     def _generate_data_structure(self, params: Any) -> list[dict[str, Any]]:
         """

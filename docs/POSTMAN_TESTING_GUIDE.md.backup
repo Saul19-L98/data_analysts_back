@@ -4,14 +4,7 @@ Complete guide for testing the FastAPI backend using Postman.
 
 ---
 
-## � Documentation Index
-
-- **This Guide**: Testing `/api/v1/ingest` endpoint with file uploads
-- **[Chart Transform with Dataset Testing](CHART_TRANSFORM_DATASET_TESTING.md)**: **NEW v1.4.0** - Testing `/api/v1/charts/transform` with actual data processing
-
----
-
-## �🚀 Prerequisites
+## 🚀 Prerequisites
 
 1. **Server Running**: Make sure the backend is running on `http://localhost:8000`
    ```bash

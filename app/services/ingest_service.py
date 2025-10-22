@@ -1,5 +1,6 @@
 """Ingest service orchestrating file parsing, analysis, and Bedrock invocation."""
 from typing import Any
+import pandas as pd
 
 from app.core.config import Settings
 from app.core.utils import format_bedrock_prompt, generate_session_id
@@ -27,6 +28,33 @@ class IngestService:
         self.file_parser = FileParserService()
         self.data_analyzer = DataAnalyzerService()
         self.bedrock_service = BedrockService(settings)
+
+    def _df_to_json_records(self, df: pd.DataFrame) -> list[dict[str, Any]]:
+        """
+        Convert DataFrame to JSON-serializable list of records.
+        
+        Handles datetime conversions, NaN values, and type conversions for both CSV and XLSX files.
+        
+        Args:
+            df: DataFrame to convert (from CSV or XLSX parsing)
+            
+        Returns:
+            List of dictionaries (one per row), ready for JSON serialization
+        """
+        # Make a copy to avoid modifying original
+        df_copy = df.copy()
+        
+        # Convert datetime columns to ISO format strings (YYYY-MM-DD)
+        for col in df_copy.select_dtypes(include=['datetime64']).columns:
+            df_copy[col] = df_copy[col].dt.strftime('%Y-%m-%d')
+        
+        # Replace NaN/NaT with None (JSON null)
+        df_copy = df_copy.where(pd.notnull(df_copy), None)
+        
+        # Convert to list of dictionaries (records)
+        records = df_copy.to_dict(orient='records')
+        
+        return records
 
     async def handle_upload(
         self,
@@ -82,7 +110,10 @@ class IngestService:
             enable_trace=False,
         )
 
-        # 6. Build response
+        # 6. Convert DataFrame to JSON records
+        dataset = self._df_to_json_records(df)
+
+        # 7. Build response
         summary = DataSummary(
             describe_numeric=analysis["describe_numeric"],
             describe_non_numeric=analysis["describe_non_numeric"],
@@ -97,4 +128,5 @@ class IngestService:
             summary=summary,
             agent_reply=agent_reply,
             sent_to_agent=True,
+            dataset=dataset,
         )

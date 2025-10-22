@@ -75,8 +75,11 @@ async def transform_charts(request: TransformChartRequest) -> TransformChartResp
     """
     service = ChartTransformService()
 
-    # Transform the charts
-    transformed_charts = service.transform_charts(request.suggested_charts)
+    # Transform the charts with optional dataset
+    transformed_charts = service.transform_charts(
+        request.suggested_charts,
+        dataset=request.dataset
+    )
 
     return TransformChartResponse(
         message="Gráficos transformados exitosamente",

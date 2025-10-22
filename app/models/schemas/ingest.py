@@ -14,6 +14,10 @@ class IngestResponse(BaseModel):
     summary: "DataSummary" = Field(..., description="Statistical summary of the dataset")
     agent_reply: dict[str, Any] | str = Field(..., description="Parsed JSON response from the Bedrock Agent (or raw string if parsing fails)")
     sent_to_agent: bool = Field(default=True, description="Whether data was sent to agent")
+    dataset: list[dict[str, Any]] = Field(
+        ..., 
+        description="Complete dataset as JSON array (CSV/XLSX converted to list of records). Ready to use in chart transformation endpoint."
+    )
 
 
 class DataSummary(BaseModel):
