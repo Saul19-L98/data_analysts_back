@@ -1,4 +1,5 @@
 """AWS Bedrock Agent service for invoking agents."""
+import json
 from typing import Any
 
 import boto3
@@ -46,7 +47,7 @@ class BedrockService:
         session_id: str,
         input_text: str,
         enable_trace: bool = False,
-    ) -> str:
+    ) -> dict[str, Any] | str:
         """
         Invoke Bedrock Agent and return the response.
 
@@ -58,7 +59,7 @@ class BedrockService:
             enable_trace: Whether to enable tracing
 
         Returns:
-            Agent's response text
+            Parsed JSON response as dict, or raw string if JSON parsing fails
 
         Raises:
             BedrockThrottlingError: If request is throttled
@@ -76,7 +77,8 @@ class BedrockService:
             # Extract completion from event stream
             completion_text = self._extract_completion(response)
 
-            return completion_text
+            # Try to parse as JSON
+            return self._parse_json_response(completion_text)
 
         except ClientError as e:
             error_code = e.response.get("Error", {}).get("Code", "")
@@ -126,3 +128,38 @@ class BedrockService:
             return "Agent response received but no text content was extracted."
 
         return "".join(completion_parts)
+
+    @staticmethod
+    def _parse_json_response(response_text: str) -> dict[str, Any] | str:
+        """
+        Attempt to parse the agent response as JSON.
+
+        Args:
+            response_text: Raw response text from agent
+
+        Returns:
+            Parsed JSON as dict if successful, otherwise returns raw string
+        """
+        # Strip whitespace and newlines from start/end
+        cleaned_text = response_text.strip()
+        
+        try:
+            # Try to parse the entire response as JSON
+            return json.loads(cleaned_text)
+        except json.JSONDecodeError:
+            # If that fails, try to find JSON within the text
+            # Sometimes responses may have extra text before/after JSON
+            try:
+                # Look for JSON object boundaries
+                start_idx = cleaned_text.find('{')
+                end_idx = cleaned_text.rfind('}')
+                
+                if start_idx != -1 and end_idx != -1 and end_idx > start_idx:
+                    json_str = cleaned_text[start_idx:end_idx + 1]
+                    return json.loads(json_str)
+            except json.JSONDecodeError:
+                pass
+            
+            # If all parsing attempts fail, return the raw string
+            # This ensures we never lose data even if format is unexpected
+            return cleaned_text

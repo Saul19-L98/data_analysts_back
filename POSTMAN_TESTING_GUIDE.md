@@ -141,7 +141,63 @@ Complete guide for testing the FastAPI backend using Postman.
     },
     "info_text": "<class 'pandas.core.frame.DataFrame'>\\nRangeIndex: 15 entries, 0 to 14..."
   },
-  "agent_reply": "Based on the dataset profile, I can provide the following insights:\n\n**Data Overview:**\n- 15 records across 3 stores (101, 102, 103)\n- Tracking 5 columns: date, store_id, sales, category, units_sold\n- Date range covers 5 unique dates\n\n**Sales Analysis:**\n- Average sales: $1,758.18\n- Sales range: $450 (minimum) to $3,200 (maximum)\n- High standard deviation ($850.45) indicates significant variability\n\n**Category Performance:**\n- Food is the most common category (33% of transactions)\n- 3 distinct product categories tracked\n\n**Units Sold:**\n- Average: 33.8 units per transaction\n- Range: 8 to 58 units\n\n**Key Findings:**\n1. Store performance varies significantly (low: $450, high: $3,200)\n2. Food category dominates the dataset\n3. Inconsistent transaction sizes suggest varied customer behavior\n\n**Recommendations:**\n- Investigate low-performing transactions ($450 range)\n- Analyze what drives high-value sales ($3,200 range)\n- Focus marketing efforts on Food category\n- Study store-level differences for best practices\n\nWould you like me to drill deeper into any specific metric or trend?",
+  "agent_reply": {
+    "version": "1.0",
+    "context": {
+      "dataset_name": null,
+      "row_count": 15,
+      "column_count": 5,
+      "columns": [
+        {
+          "name": "date",
+          "dtype": "object",
+          "role": "datetime"
+        },
+        {
+          "name": "store_id",
+          "dtype": "int64",
+          "role": "categorical"
+        },
+        {
+          "name": "sales",
+          "dtype": "float64",
+          "role": "numeric"
+        }
+      ],
+      "quality_notes": [
+        "Date column is stored as object type - requires conversion to datetime"
+      ]
+    },
+    "insights": [
+      {
+        "title": "Preliminary Sales Overview",
+        "summary": "Average daily sales are 1758.33 with 31.8 units sold per transaction",
+        "method_hint": "Descriptive statistics from sample data",
+        "evidence_columns": ["sales", "units_sold"]
+      }
+    ],
+    "suggested_charts": [
+      {
+        "title": "Q3 2024 Sales Trend",
+        "chart_type": "line",
+        "parameters": {
+          "x_axis": "date",
+          "y_axis": "sales",
+          "aggregations": [{"column": "sales", "func": "sum"}]
+        },
+        "insight": "Will show sales fluctuations during Q3 to identify trends/anomalies",
+        "priority": "high"
+      }
+    ],
+    "next_actions": [
+      {
+        "type": "REQUEST_CHART_DATA",
+        "action_group": "AnalyticsAPI",
+        "operation": "get-chart-data"
+      }
+    ],
+    "errors": []
+  },
   "sent_to_agent": true
 }
 ```

@@ -13,7 +13,7 @@ class IngestResponse(BaseModel):
     columns: list[str] = Field(..., description="List of column names from the dataset")
     dtypes: dict[str, str] = Field(..., description="Data types for each column")
     summary: "DataSummary" = Field(..., description="Statistical summary of the dataset")
-    agent_reply: str = Field(..., description="Response from the Bedrock Agent")
+    agent_reply: dict[str, Any] | str = Field(..., description="Parsed JSON response from the Bedrock Agent (or raw string if parsing fails)")
     sent_to_agent: bool = Field(default=True, description="Whether data was sent to agent")
 
 

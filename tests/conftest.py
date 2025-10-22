@@ -20,12 +20,13 @@ def mock_bedrock_client():
     """Mock boto3 bedrock client."""
     client = MagicMock()
     
-    # Mock invoke_agent response
+    # Mock invoke_agent response with valid JSON
+    mock_json_response = '{"insights": ["Test insight 1", "Test insight 2"], "summary": "Analysis complete", "recommendations": ["Action 1", "Action 2"]}'
     client.invoke_agent.return_value = {
         "completion": [
             {
                 "chunk": {
-                    "bytes": b"This is a test agent response with analysis insights."
+                    "bytes": mock_json_response.encode("utf-8")
                 }
             }
         ]
