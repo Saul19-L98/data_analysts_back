@@ -228,6 +228,8 @@ MAX_FILE_SIZE_MB=50
 - **[Testing Summary](docs/TESTING_SUMMARY.md)** - Quick reference for all testing docs
 - **[Postman Testing Guide](docs/POSTMAN_TESTING_GUIDE.md)** - Test /ingest endpoint with file uploads
 - **[Chart Transform with Dataset](docs/CHART_TRANSFORM_DATASET_TESTING.md)** - **NEW v1.4.0**: Test chart data processing
+- **[Agent Response Formatting](docs/AGENT_RESPONSE_FORMATTING.md)** - **NEW v1.5.0**: Format agent responses for chart transform
+- **[Quick Reference: Formatting](docs/QUICK_REFERENCE_FORMATTING.md)** - **NEW v1.5.0**: One-liner commands and snippets
 - **[JSON Parsing Improvements](docs/JSON_PARSING_IMPROVEMENTS.md)** - Technical: JSON parsing system
 - **[Chart Data Processing](docs/CHART_DATA_PROCESSING.md)** - Technical: Data processing pipeline
 
@@ -254,11 +256,25 @@ uv run python test_json_parsing.py
 
 # Test chart data processing
 uv run python test_chart_processing.py
+
+# Test agent response formatting (NEW v1.5.0)
+uv run python test_chart_formatting.py
+
+# Format agent response (CLI)
+uv run python format_agent_response.py response.json
 ```
 
 ## Recent Updates 🆕
 
-### v1.4.0 (Current)
+### v1.5.0 (Current)
+- 🎨 **Auto-Formatted Chart Requests**: `/ingest` now returns `chart_transform_request` ready for immediate use
+- 🗑️ **Removed `agent_reply` Duplication**: Cleaner response structure without redundant data
+- 📊 **Extended Chart Types**: Added support for scatter, donut, radar, radial charts (shadcn/recharts compatible)
+- 🛠️ **CLI Tool**: Command-line utility for formatting agent responses
+- ✅ **Auto-Validation**: Automatic filtering of unsupported chart types (histogram, box, etc.)
+- 📚 **Comprehensive Docs**: Complete guide with examples and best practices
+
+### v1.4.0
 - ✨ **Chart data processing**: Include dataset in transform request for fully processed chart data
 - 🔧 **Pandas integration**: Automatic filtering, aggregation, grouping, and sorting
 - 📊 **Ready-to-render data**: Chart data can be passed directly to shadcn/recharts

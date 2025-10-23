@@ -19,7 +19,9 @@ class SuggestedChart(BaseModel):
     """Chart suggestion from Bedrock Agent."""
 
     title: str = Field(..., description="Chart title")
-    chart_type: Literal["line", "bar", "area", "pie"] = Field(..., description="Type of chart")
+    chart_type: Literal["line", "bar", "area", "pie", "donut", "scatter", "radar", "radial"] = Field(
+        ..., description="Type of chart (shadcn/recharts compatible)"
+    )
     parameters: ChartParameters = Field(..., description="Chart parameters")
     insight: str | None = Field(None, description="Insight about the chart")
     priority: str | None = Field(None, description="Priority level")
@@ -55,7 +57,9 @@ class TransformedChart(BaseModel):
 
     title: str = Field(..., description="Chart title")
     description: str | None = Field(None, description="Chart description/insight")
-    chart_type: Literal["line", "bar", "area", "pie"] = Field(..., description="Chart type")
+    chart_type: Literal["line", "bar", "area", "pie", "donut", "scatter", "radar", "radial"] = Field(
+        ..., description="Chart type (shadcn/recharts compatible)"
+    )
     chart_config: dict[str, ShadcnChartConfig] = Field(..., description="Chart configuration for colors/labels")
     chart_data: list[dict[str, Any]] = Field(..., description="Data formatted for shadcn charts")
     x_axis_key: str | None = Field(None, description="Key for X axis")

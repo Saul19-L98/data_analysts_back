@@ -1,6 +1,7 @@
 """Ingest service orchestrating file parsing, analysis, and Bedrock invocation."""
 from typing import Any
 import pandas as pd
+import logging
 
 from app.core.config import Settings
 from app.core.utils import format_bedrock_prompt, generate_session_id
@@ -8,6 +9,9 @@ from app.models.schemas.ingest import DataSummary, IngestResponse
 from app.services.bedrock_service import BedrockService
 from app.services.data_analyzer import DataAnalyzerService
 from app.services.file_parser import FileParserService
+from app.utils.chart_formatting import format_chart_transform_request
+
+logger = logging.getLogger(__name__)
 
 
 class IngestService:
@@ -113,7 +117,23 @@ class IngestService:
         # 6. Convert DataFrame to JSON records
         dataset = self._df_to_json_records(df)
 
-        # 7. Build response
+        # 7. Format chart transform request (with validation and filtering)
+        chart_transform_request = None
+        try:
+            chart_transform_request = format_chart_transform_request(
+                session_id=session_id,
+                agent_reply=agent_reply,
+                dataset=dataset,
+                filter_unsupported=True  # Auto-filter unsupported chart types
+            )
+            logger.info(
+                f"Formatted chart request with {len(chart_transform_request['suggested_charts'])} valid charts"
+            )
+        except Exception as e:
+            logger.warning(f"Failed to format chart transform request: {e}")
+            # Continue without chart_transform_request (optional feature)
+
+        # 8. Build response
         summary = DataSummary(
             describe_numeric=analysis["describe_numeric"],
             describe_non_numeric=analysis["describe_non_numeric"],
@@ -126,7 +146,7 @@ class IngestService:
             columns=analysis["columns"],
             dtypes=analysis["dtypes"],
             summary=summary,
-            agent_reply=agent_reply,
             sent_to_agent=True,
             dataset=dataset,
+            chart_transform_request=chart_transform_request,
         )

@@ -78,6 +78,70 @@ Complete guide for testing the FastAPI backend using Postman.
 
 **Status Code**: `200 OK`
 
+**Response Body Structure** (v1.5.0):
+```json
+{
+  "message": "Archivo analizado con éxito",
+  "session_id": "sess_2025_10_23T02_29_32Z_11c38ea4",
+  "columns": ["date", "paper_type", "quantity", "price", "total_sales"],
+  "dtypes": {
+    "date": "object",
+    "paper_type": "object",
+    "quantity": "int64",
+    "price": "float64",
+    "total_sales": "float64"
+  },
+  "summary": {
+    "describe_numeric": { ... },
+    "describe_non_numeric": { ... },
+    "info_text": "..."
+  },
+  "sent_to_agent": true,
+  "dataset": [
+    {
+      "date": "2024-10-01",
+      "paper_type": "A4",
+      "quantity": 150,
+      "price": 5.5,
+      "total_sales": 825.0
+    },
+    // ... more records
+  ],
+  "chart_transform_request": {
+    "session_id": "sess_2025_10_23T02_29_32Z_11c38ea4",
+    "suggested_charts": [
+      {
+        "title": "Monthly Sales Trend",
+        "chart_type": "line",
+        "parameters": {
+          "x_axis": "date",
+          "y_axis": "total_sales",
+          "aggregations": [{"column": "total_sales", "func": "sum"}],
+          "group_by": ["date"],
+          "sort": {"by": "date", "order": "asc"}
+        },
+        "insight": "Shows sales evolution over time",
+        "priority": "high",
+        "data_request_required": true
+      }
+      // ... more charts (filtered for valid types only)
+    ],
+    "dataset": [ ... ]  // Same as root-level dataset
+  }
+}
+```
+
+**Key Fields** (v1.5.0):
+- ✅ **`chart_transform_request`**: **NEW** - Pre-formatted request ready for `/api/v1/charts/transform`
+- ✅ **`dataset`**: Complete data as JSON array (works for CSV and XLSX)
+- ✅ **`suggested_charts`**: Auto-filtered to remove unsupported chart types (histogram, box, etc.)
+- ❌ **`agent_reply`**: **REMOVED** - No longer duplicated (replaced by `chart_transform_request`)
+
+**What Changed in v1.5.0:**
+- Removed `agent_reply` field (was causing duplication)
+- Added `chart_transform_request` with validated charts and dataset
+- Frontend can now use `chart_transform_request` directly without parsing
+
 **Response Body** (JSON):
 
 ```json

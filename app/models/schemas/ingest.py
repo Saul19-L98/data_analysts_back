@@ -12,11 +12,14 @@ class IngestResponse(BaseModel):
     columns: list[str] = Field(..., description="List of column names from the dataset")
     dtypes: dict[str, str] = Field(..., description="Data types for each column")
     summary: "DataSummary" = Field(..., description="Statistical summary of the dataset")
-    agent_reply: dict[str, Any] | str = Field(..., description="Parsed JSON response from the Bedrock Agent (or raw string if parsing fails)")
     sent_to_agent: bool = Field(default=True, description="Whether data was sent to agent")
     dataset: list[dict[str, Any]] = Field(
         ..., 
         description="Complete dataset as JSON array (CSV/XLSX converted to list of records). Ready to use in chart transformation endpoint."
+    )
+    chart_transform_request: dict[str, Any] | None = Field(
+        None,
+        description="Pre-formatted and validated request for /api/v1/charts/transform endpoint. Contains session_id, suggested_charts (filtered), and dataset ready for immediate use."
     )
 
 
