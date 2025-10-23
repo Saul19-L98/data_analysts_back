@@ -1,0 +1,273 @@
+{
+  "session_id": "sess_2025_10_22T22_58_57Z_098bc5ca",
+  "suggested_charts": [
+    {
+      "title": "Monthly Sales Trend",
+      "chart_type": "line",
+      "parameters": {
+        "x_axis": "date",
+        "y_axis": "total_sales",
+        "aggregations": [
+          {
+            "column": "total_sales",
+            "func": "sum"
+          }
+        ],
+        "group_by": [
+          "date"
+        ],
+        "sort": {
+          "by": "date",
+          "order": "asc"
+        }
+      },
+      "insight": "Shows monthly sales evolution",
+      "priority": "high",
+      "data_request_required": true
+    },
+    {
+      "title": "Sales Distribution by Paper Type",
+      "chart_type": "bar",
+      "parameters": {
+        "x_axis": "paper_type",
+        "y_axis": "total_sales",
+        "aggregations": [
+          {
+            "column": "total_sales",
+            "func": "sum"
+          }
+        ],
+        "sort": {
+          "by": "total_sales",
+          "order": "desc"
+        }
+      },
+      "insight": "Compares total sales across paper types",
+      "priority": "medium",
+      "data_request_required": true
+    },
+    {
+      "title": "Sales vs Quantity Relationship",
+      "chart_type": "scatter",
+      "parameters": {
+        "x_axis": "quantity",
+        "y_axis": "total_sales"
+      },
+      "insight": "Reveals correlation between units sold and revenue",
+      "priority": "low",
+      "data_request_required": false
+    }
+  ],
+  "dataset": [
+    {
+      "date": "2024-10-01",
+      "paper_type": "A4",
+      "quantity": 150,
+      "price": 5.5,
+      "total_sales": 825.0
+    },
+    {
+      "date": "2024-10-02",
+      "paper_type": "Letter",
+      "quantity": 200,
+      "price": 4.75,
+      "total_sales": 950.0
+    },
+    {
+      "date": "2024-10-03",
+      "paper_type": "Legal",
+      "quantity": 80,
+      "price": 6.25,
+      "total_sales": 500.0
+    },
+    {
+      "date": "2024-10-04",
+      "paper_type": "A4",
+      "quantity": 175,
+      "price": 5.5,
+      "total_sales": 962.5
+    },
+    {
+      "date": "2024-10-05",
+      "paper_type": "Cardstock",
+      "quantity": 120,
+      "price": 8.0,
+      "total_sales": 960.0
+    },
+    {
+      "date": "2024-10-06",
+      "paper_type": "Letter",
+      "quantity": 190,
+      "price": 4.75,
+      "total_sales": 902.5
+    },
+    {
+      "date": "2024-10-07",
+      "paper_type": "A4",
+      "quantity": 160,
+      "price": 5.5,
+      "total_sales": 880.0
+    },
+    {
+      "date": "2024-10-08",
+      "paper_type": "Legal",
+      "quantity": 95,
+      "price": 6.25,
+      "total_sales": 593.75
+    },
+    {
+      "date": "2024-10-09",
+      "paper_type": "Cardstock",
+      "quantity": 140,
+      "price": 8.0,
+      "total_sales": 1120.0
+    },
+    {
+      "date": "2024-10-10",
+      "paper_type": "A4",
+      "quantity": 185,
+      "price": 5.5,
+      "total_sales": 1017.5
+    },
+    {
+      "date": "2024-10-11",
+      "paper_type": "Letter",
+      "quantity": 210,
+      "price": 4.75,
+      "total_sales": 997.5
+    },
+    {
+      "date": "2024-10-12",
+      "paper_type": "Legal",
+      "quantity": 75,
+      "price": 6.25,
+      "total_sales": 468.75
+    },
+    {
+      "date": "2024-10-13",
+      "paper_type": "Cardstock",
+      "quantity": 130,
+      "price": 8.0,
+      "total_sales": 1040.0
+    },
+    {
+      "date": "2024-10-14",
+      "paper_type": "A4",
+      "quantity": 170,
+      "price": 5.5,
+      "total_sales": 935.0
+    },
+    {
+      "date": "2024-10-15",
+      "paper_type": "Letter",
+      "quantity": 195,
+      "price": 4.75,
+      "total_sales": 926.25
+    },
+    {
+      "date": "2024-10-16",
+      "paper_type": "Legal",
+      "quantity": 88,
+      "price": 6.25,
+      "total_sales": 550.0
+    },
+    {
+      "date": "2024-10-17",
+      "paper_type": "A4",
+      "quantity": 165,
+      "price": 5.5,
+      "total_sales": 907.5
+    },
+    {
+      "date": "2024-10-18",
+      "paper_type": "Cardstock",
+      "quantity": 125,
+      "price": 8.0,
+      "total_sales": 1000.0
+    },
+    {
+      "date": "2024-10-19",
+      "paper_type": "Letter",
+      "quantity": 205,
+      "price": 4.75,
+      "total_sales": 973.75
+    },
+    {
+      "date": "2024-10-20",
+      "paper_type": "A4",
+      "quantity": 180,
+      "price": 5.5,
+      "total_sales": 990.0
+    },
+    {
+      "date": "2024-10-21",
+      "paper_type": "Legal",
+      "quantity": 92,
+      "price": 6.25,
+      "total_sales": 575.0
+    },
+    {
+      "date": "2024-10-22",
+      "paper_type": "Cardstock",
+      "quantity": 135,
+      "price": 8.0,
+      "total_sales": 1080.0
+    },
+    {
+      "date": "2024-10-23",
+      "paper_type": "A4",
+      "quantity": 155,
+      "price": 5.5,
+      "total_sales": 852.5
+    },
+    {
+      "date": "2024-10-24",
+      "paper_type": "Letter",
+      "quantity": 188,
+      "price": 4.75,
+      "total_sales": 893.0
+    },
+    {
+      "date": "2024-10-25",
+      "paper_type": "Legal",
+      "quantity": 78,
+      "price": 6.25,
+      "total_sales": 487.5
+    },
+    {
+      "date": "2024-10-26",
+      "paper_type": "A4",
+      "quantity": 172,
+      "price": 5.5,
+      "total_sales": 946.0
+    },
+    {
+      "date": "2024-10-27",
+      "paper_type": "Cardstock",
+      "quantity": 145,
+      "price": 8.0,
+      "total_sales": 1160.0
+    },
+    {
+      "date": "2024-10-28",
+      "paper_type": "Letter",
+      "quantity": 198,
+      "price": 4.75,
+      "total_sales": 940.5
+    },
+    {
+      "date": "2024-10-29",
+      "paper_type": "A4",
+      "quantity": 167,
+      "price": 5.5,
+      "total_sales": 918.5
+    },
+    {
+      "date": "2024-10-30",
+      "paper_type": "Legal",
+      "quantity": 85,
+      "price": 6.25,
+      "total_sales": 531.25
+    }
+  ]
+}

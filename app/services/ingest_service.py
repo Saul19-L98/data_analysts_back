@@ -147,6 +147,5 @@ class IngestService:
             dtypes=analysis["dtypes"],
             summary=summary,
             sent_to_agent=True,
-            dataset=dataset,
             chart_transform_request=chart_transform_request,
         )

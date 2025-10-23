@@ -13,10 +13,6 @@ class IngestResponse(BaseModel):
     dtypes: dict[str, str] = Field(..., description="Data types for each column")
     summary: "DataSummary" = Field(..., description="Statistical summary of the dataset")
     sent_to_agent: bool = Field(default=True, description="Whether data was sent to agent")
-    dataset: list[dict[str, Any]] = Field(
-        ..., 
-        description="Complete dataset as JSON array (CSV/XLSX converted to list of records). Ready to use in chart transformation endpoint."
-    )
     chart_transform_request: dict[str, Any] | None = Field(
         None,
         description="Pre-formatted and validated request for /api/v1/charts/transform endpoint. Contains session_id, suggested_charts (filtered), and dataset ready for immediate use."

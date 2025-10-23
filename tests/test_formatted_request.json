@@ -1,0 +1,51 @@
+{
+  "session_id": "sess_2025_10_22T22_58_57Z_098bc5ca",
+  "suggested_charts": [
+    {
+      "title": "Monthly Sales Trend",
+      "chart_type": "line",
+      "parameters": {
+        "x_axis": "date",
+        "y_axis": "total_sales"
+      },
+      "insight": "Shows monthly sales evolution",
+      "priority": "high"
+    },
+    {
+      "title": "Sales by Paper Type",
+      "chart_type": "bar",
+      "parameters": {
+        "x_axis": "paper_type",
+        "y_axis": "total_sales"
+      },
+      "insight": "Compares sales across types",
+      "priority": "medium"
+    },
+    {
+      "title": "Scatter Analysis",
+      "chart_type": "scatter",
+      "parameters": {
+        "x_axis": "quantity",
+        "y_axis": "total_sales"
+      },
+      "insight": "Correlation analysis",
+      "priority": "low"
+    }
+  ],
+  "dataset": [
+    {
+      "date": "2024-10-01",
+      "paper_type": "A4",
+      "quantity": 150,
+      "price": 5.5,
+      "total_sales": 825.0
+    },
+    {
+      "date": "2024-10-02",
+      "paper_type": "Letter",
+      "quantity": 200,
+      "price": 4.75,
+      "total_sales": 950.0
+    }
+  ]
+}

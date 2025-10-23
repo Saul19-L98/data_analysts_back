@@ -14,10 +14,11 @@ The `/api/v1/ingest` endpoint returns (v1.5.0):
   "chart_transform_request": {
     "session_id": "sess_xxx",
     "suggested_charts": [...],  // Already parsed and filtered!
-    "dataset": [...]
+    "dataset": [...]             // Complete dataset included
   },
-  "dataset": [...],
-  "session_id": "sess_xxx"
+  "session_id": "sess_xxx",
+  "columns": [...],
+  "dtypes": {...}
 }
 ```
 
@@ -30,7 +31,7 @@ The `/api/v1/charts/transform` endpoint expects:
 }
 ```
 
-**Solution in v1.5.0**: The backend now automatically formats the request! You can use `chart_transform_request` directly without any parsing.
+**Solution in v1.5.0**: The backend now automatically formats the complete request! Simply use `chart_transform_request` as-is - no parsing, no formatting, no duplication.
 
 ---
 

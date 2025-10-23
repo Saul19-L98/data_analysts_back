@@ -97,16 +97,6 @@ Complete guide for testing the FastAPI backend using Postman.
     "info_text": "..."
   },
   "sent_to_agent": true,
-  "dataset": [
-    {
-      "date": "2024-10-01",
-      "paper_type": "A4",
-      "quantity": 150,
-      "price": 5.5,
-      "total_sales": 825.0
-    },
-    // ... more records
-  ],
   "chart_transform_request": {
     "session_id": "sess_2025_10_23T02_29_32Z_11c38ea4",
     "suggested_charts": [
@@ -126,21 +116,32 @@ Complete guide for testing the FastAPI backend using Postman.
       }
       // ... more charts (filtered for valid types only)
     ],
-    "dataset": [ ... ]  // Same as root-level dataset
+    "dataset": [
+      {
+        "date": "2024-10-01",
+        "paper_type": "A4",
+        "quantity": 150,
+        "price": 5.5,
+        "total_sales": 825.0
+      }
+      // ... more records
+    ]
   }
 }
 ```
 
 **Key Fields** (v1.5.0):
-- ✅ **`chart_transform_request`**: **NEW** - Pre-formatted request ready for `/api/v1/charts/transform`
-- ✅ **`dataset`**: Complete data as JSON array (works for CSV and XLSX)
-- ✅ **`suggested_charts`**: Auto-filtered to remove unsupported chart types (histogram, box, etc.)
-- ❌ **`agent_reply`**: **REMOVED** - No longer duplicated (replaced by `chart_transform_request`)
+- ✅ **`chart_transform_request`**: **Complete request** ready for `/api/v1/charts/transform` (includes dataset)
+- ✅ **`chart_transform_request.dataset`**: Complete data as JSON array (works for CSV and XLSX)
+- ✅ **`chart_transform_request.suggested_charts`**: Auto-filtered to remove unsupported chart types
+- ❌ **`agent_reply`**: **REMOVED** - No longer included (replaced by `chart_transform_request`)
+- ❌ **`dataset`** (root level): **REMOVED** - Now only inside `chart_transform_request`
 
 **What Changed in v1.5.0:**
 - Removed `agent_reply` field (was causing duplication)
-- Added `chart_transform_request` with validated charts and dataset
-- Frontend can now use `chart_transform_request` directly without parsing
+- Removed standalone `dataset` field (was causing duplication)
+- Added `chart_transform_request` with everything needed for transform endpoint
+- Frontend gets single, complete, ready-to-use request object
 
 **Response Body** (JSON):
 
