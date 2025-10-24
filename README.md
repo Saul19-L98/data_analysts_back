@@ -35,13 +35,32 @@ app/
 
 ## Quick Start 🚀
 
-### 1. Clone and Setup
+### Option A: Docker (Recommended) 🐳
 
 ```bash
-# Clone the repository
+# 1. Clone the repository
 cd data_analyst_back
 
-# Install dependencies with UV
+# 2. Configure environment
+cp .env.example .env
+# Edit .env with your AWS credentials
+
+# 3. Build and run with Docker Compose
+docker compose up -d
+
+# 4. Access the API
+curl http://localhost:8000/docs
+```
+
+**📖 See [DOCKER_QUICKSTART.md](./DOCKER_QUICKSTART.md) for detailed Docker instructions**
+
+### Option B: Local Development with UV
+
+```bash
+# 1. Clone the repository
+cd data_analyst_back
+
+# 2. Install dependencies with UV
 uv sync
 ```
 
@@ -56,6 +75,8 @@ cp .env.example .env
 # - AWS_REGION
 # - AWS_ACCESS_KEY_ID
 # - AWS_SECRET_ACCESS_KEY
+# - BEDROCK_AGENT_ID
+# - BEDROCK_AGENT_ALIAS_ID
 # Optional (for development):
 # - DEV_MODE=dev  # Show raw agent responses for debugging (default: prod)
 ```
@@ -64,12 +85,22 @@ cp .env.example .env
 
 ### 3. Run the Application
 
+**With UV (Local):**
 ```bash
 # Development server with auto-reload
 uv run uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 
 # Production server with multiple workers
 uv run uvicorn app.main:app --host 0.0.0.0 --port 8000 --workers 4
+```
+
+**With Docker:**
+```bash
+# Production
+docker compose up -d api
+
+# Development with hot reload
+docker compose --profile dev up -d api-dev
 ```
 
 ### 4. Access API Documentation

@@ -1,0 +1,75 @@
+version: '3.8'
+
+services:
+  # FastAPI application
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: data-analyst-back:latest
+    container_name: data-analyst-api
+    ports:
+      - "8000:8000"
+    environment:
+      # Override with your actual values or use .env file
+      - AWS_REGION=${AWS_REGION:-us-east-1}
+      - BEDROCK_AGENT_ID=${BEDROCK_AGENT_ID}
+      - BEDROCK_AGENT_ALIAS_ID=${BEDROCK_AGENT_ALIAS_ID}
+      - DEV_MODE=${DEV_MODE:-prod}
+    env_file:
+      - .env  # Load environment variables from .env file
+    volumes:
+      # Mount for development (optional - comment out for production)
+      # - ./app:/app/app:ro
+      # Session storage (ephemeral - use volume for persistence)
+      - session-data:/app/sessions
+    restart: unless-stopped
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/docs').read()"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  # Development service with watch mode (Docker Compose 2.22+)
+  api-dev:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: data-analyst-back:dev
+    container_name: data-analyst-api-dev
+    ports:
+      - "8001:8000"
+    environment:
+      - AWS_REGION=${AWS_REGION:-us-east-1}
+      - BEDROCK_AGENT_ID=${BEDROCK_AGENT_ID}
+      - BEDROCK_AGENT_ALIAS_ID=${BEDROCK_AGENT_ALIAS_ID}
+      - DEV_MODE=dev
+    env_file:
+      - .env
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+    networks:
+      - app-network
+    profiles:
+      - dev
+    develop:
+      watch:
+        # Sync source code changes
+        - action: sync
+          path: ./app
+          target: /app/app
+          ignore:
+            - __pycache__/
+        # Rebuild on dependency changes
+        - action: rebuild
+          path: ./pyproject.toml
+
+volumes:
+  session-data:
+    driver: local
+
+networks:
+  app-network:
+    driver: bridge
