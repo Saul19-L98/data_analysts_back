@@ -113,12 +113,15 @@ class ChartTransformService:
         """
         chart_config = {}
 
-        # Add configuration for y-axis
+        # Add configuration for y-axis (handle both string and list)
         if params.y_axis:
-            chart_config[params.y_axis] = ShadcnChartConfig(
-                label=self._format_label(params.y_axis),
-                color=self.CHART_COLORS[color_index % len(self.CHART_COLORS)],
-            )
+            # Support multi-series: y_axis can be str or list[str]
+            y_axes = params.y_axis if isinstance(params.y_axis, list) else [params.y_axis]
+            for idx, y_col in enumerate(y_axes):
+                chart_config[y_col] = ShadcnChartConfig(
+                    label=self._format_label(y_col),
+                    color=self.CHART_COLORS[(color_index + idx) % len(self.CHART_COLORS)],
+                )
 
         # Add configuration for aggregations
         if params.aggregations:
@@ -132,9 +135,10 @@ class ChartTransformService:
                     color=self.CHART_COLORS[(color_index + idx) % len(self.CHART_COLORS)],
                 )
 
-        # Add configuration for group_by fields
+        # Add configuration for group_by fields (handle both string and list)
         if params.group_by:
-            for idx, group_field in enumerate(params.group_by):
+            group_by_list = params.group_by if isinstance(params.group_by, list) else [params.group_by]
+            for idx, group_field in enumerate(group_by_list):
                 if group_field not in chart_config:
                     chart_config[group_field] = ShadcnChartConfig(
                         label=self._format_label(group_field),
@@ -155,8 +159,12 @@ class ChartTransformService:
         """
         keys = []
 
+        # Handle both string and list for y_axis
         if params.y_axis:
-            keys.append(params.y_axis)
+            if isinstance(params.y_axis, list):
+                keys.extend(params.y_axis)
+            else:
+                keys.append(params.y_axis)
 
         if params.aggregations:
             for agg in params.aggregations:
@@ -216,19 +224,34 @@ class ChartTransformService:
 
         # Step 2: Apply aggregations
         if params.aggregations and len(params.aggregations) > 0:
-            # Group by x_axis or group_by fields
+            # Group by x_axis or group_by fields (handle both string and list for group_by)
             group_cols = []
             if params.x_axis and params.x_axis in working_df.columns:
                 group_cols.append(params.x_axis)
             if params.group_by:
-                group_cols.extend([g for g in params.group_by if g in working_df.columns])
+                group_by_list = params.group_by if isinstance(params.group_by, list) else [params.group_by]
+                group_cols.extend([g for g in group_by_list if g in working_df.columns])
+
+            # Remove duplicates while preserving order
+            group_cols = list(dict.fromkeys(group_cols))
 
             if group_cols:
                 # Perform aggregation
+                # Map common function names to pandas-compatible names
+                func_mapping = {
+                    "avg": "mean",      # avg → mean
+                    "average": "mean",  # average → mean
+                    "stdev": "std",     # stdev → std
+                    "stddev": "std",    # stddev → std
+                }
+                
                 agg_dict = {}
                 for agg in params.aggregations:
                     col = agg.get("column")
                     func = agg.get("func", "sum")
+                    
+                    # Convert to pandas-compatible function name
+                    func = func_mapping.get(func, func)
 
                     if col in working_df.columns:
                         agg_dict[col] = func
@@ -236,12 +259,14 @@ class ChartTransformService:
                 if agg_dict:
                     working_df = working_df.groupby(group_cols, as_index=False).agg(agg_dict)
 
-        # Step 3: Apply sorting
+        # Step 3: Apply sorting (with type coercion for mixed types)
         if params.sort:
             sort_col = params.sort.get("column") or params.x_axis
             sort_order = params.sort.get("order", "asc")
 
             if sort_col and sort_col in working_df.columns:
+                # Convert to string to handle mixed types (int + str like "TOTAL")
+                working_df[sort_col] = working_df[sort_col].astype(str)
                 ascending = sort_order.lower() == "asc"
                 working_df = working_df.sort_values(by=sort_col, ascending=ascending)
 
