@@ -2,6 +2,41 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.6.0] - 2025-01-21
+
+### ✨ Added
+- **Development Mode (DEV_MODE)**: New environment variable for conditional debugging
+- Raw `agent_reply` included in `/api/v1/ingest` response when `DEV_MODE=dev`
+- Conditional response field inclusion for debugging without production overhead
+- Comprehensive DEV_MODE documentation in `docs/DEV_MODE.md`
+
+### 🔧 Configuration
+- Added `dev_mode` setting to `app/core/config.py` (`Literal["dev", "prod"]`)
+- Default value: `"prod"` (production mode)
+- Environment variable: `DEV_MODE` (options: `dev`, `prod`)
+
+### 📋 Schema Changes
+- Added optional `agent_reply` field to `IngestResponse`
+- Field only populated when `DEV_MODE=dev`
+- Maintains backward compatibility (field is optional)
+
+### 🛠️ Service Updates
+- `IngestService` now conditionally includes `agent_reply` based on settings
+- Logging added: "DEV_MODE: Including raw agent_reply in response"
+- Zero performance impact in production mode
+
+### 📚 Documentation
+- New guide: `docs/DEV_MODE.md` - Complete DEV_MODE reference
+- Updated `README.md` with DEV_MODE configuration note
+- Added troubleshooting and best practices sections
+
+### 🎯 Use Cases
+- **Development**: Debug raw Bedrock Agent responses
+- **Testing**: Validate agent output formats
+- **Production**: Clean responses without debugging overhead
+
+---
+
 ## [1.3.0] - 2025-10-22
 
 ### ✨ Added

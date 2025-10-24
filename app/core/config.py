@@ -1,6 +1,6 @@
 """Core configuration using Pydantic settings."""
 from functools import lru_cache
-from typing import List
+from typing import List, Literal
 
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -15,6 +15,7 @@ class Settings(BaseSettings):
     app_name: str = Field(default="Data Analyst Backend", alias="APP_NAME")
     debug: bool = Field(default=False, alias="DEBUG")
     api_v1_prefix: str = Field(default="/api/v1", alias="API_V1_PREFIX")
+    dev_mode: Literal["dev", "prod"] = Field(default="prod", alias="DEV_MODE")
 
     # AWS Bedrock Configuration
     aws_region: str = Field(..., alias="AWS_REGION")

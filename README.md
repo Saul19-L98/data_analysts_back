@@ -56,7 +56,11 @@ cp .env.example .env
 # - AWS_REGION
 # - AWS_ACCESS_KEY_ID
 # - AWS_SECRET_ACCESS_KEY
+# Optional (for development):
+# - DEV_MODE=dev  # Show raw agent responses for debugging (default: prod)
 ```
+
+> 📘 **Dev Mode**: Set `DEV_MODE=dev` to include raw Bedrock Agent responses in API output for debugging. See [DEV_MODE.md](./docs/DEV_MODE.md) for details.
 
 ### 3. Run the Application
 

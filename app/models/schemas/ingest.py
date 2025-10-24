@@ -1,5 +1,5 @@
 """Pydantic schemas for API requests and responses."""
-from typing import Any
+from typing import Any, Optional
 
 from pydantic import BaseModel, Field
 
@@ -16,6 +16,10 @@ class IngestResponse(BaseModel):
     chart_transform_request: dict[str, Any] | None = Field(
         None,
         description="Pre-formatted and validated request for /api/v1/charts/transform endpoint. Contains session_id, suggested_charts (filtered), and dataset ready for immediate use."
+    )
+    agent_reply: Optional[dict[str, Any]] = Field(
+        default=None,
+        description="Raw agent response (only included when DEV_MODE=dev for debugging purposes)"
     )
 
 

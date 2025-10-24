@@ -2,6 +2,7 @@
 from typing import Any
 import pandas as pd
 import logging
+import json
 
 from app.core.config import Settings
 from app.core.utils import format_bedrock_prompt, generate_session_id
@@ -140,12 +141,34 @@ class IngestService:
             info_text=analysis["info_text"],
         )
 
-        return IngestResponse(
-            message="Archivo analizado con éxito",
-            session_id=session_id,
-            columns=analysis["columns"],
-            dtypes=analysis["dtypes"],
-            summary=summary,
-            sent_to_agent=True,
-            chart_transform_request=chart_transform_request,
-        )
+        # 9. Prepare response data
+        response_data = {
+            "message": "Archivo analizado con éxito",
+            "session_id": session_id,
+            "columns": analysis["columns"],
+            "dtypes": analysis["dtypes"],
+            "summary": summary,
+            "sent_to_agent": True,
+            "chart_transform_request": chart_transform_request,
+        }
+
+        # 10. Conditionally include agent_reply in dev mode
+        if self.settings.dev_mode == "dev":
+            # Ensure agent_reply is always a dict (parse if it's a string)
+            if isinstance(agent_reply, str):
+                try:
+                    parsed_reply = json.loads(agent_reply)
+                    response_data["agent_reply"] = parsed_reply
+                    logger.info("DEV_MODE: Including parsed agent_reply in response")
+                except json.JSONDecodeError:
+                    # If parsing fails, wrap the string in a dict
+                    response_data["agent_reply"] = {
+                        "raw_response": agent_reply,
+                        "parse_error": "Could not parse as JSON"
+                    }
+                    logger.warning("DEV_MODE: Agent reply is not valid JSON, wrapping in dict")
+            else:
+                response_data["agent_reply"] = agent_reply
+                logger.info("DEV_MODE: Including raw agent_reply in response")
+
+        return IngestResponse(**response_data)
