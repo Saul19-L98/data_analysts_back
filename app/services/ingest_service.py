@@ -106,7 +106,25 @@ class IngestService:
             info_text=analysis["info_text"],
         )
 
-        # 5. Invoke Bedrock Agent
+        # 5. Print Bedrock payload in dev mode, then invoke agent
+        if self.settings.dev_mode == "dev":
+            bedrock_payload = {
+                "agent_id": agent_id,
+                "agent_alias_id": agent_alias_id,
+                "session_id": session_id,
+                "input_text": prompt,
+                "enable_trace": False,
+            }
+            try:
+                print("\n" + "="*60)
+                print("DEV_MODE: Bedrock Agent Payload")
+                print("="*60)
+                print(json.dumps(bedrock_payload, indent=2))
+                print("="*60 + "\n")
+                logger.info(f"DEV_MODE: Invoking Bedrock with prompt length: {len(prompt)} chars")
+            except Exception:
+                logger.exception("DEV_MODE: Failed to print Bedrock payload")
+
         agent_reply = self.bedrock_service.invoke_agent(
             agent_id=agent_id,
             agent_alias_id=agent_alias_id,
@@ -120,6 +138,7 @@ class IngestService:
 
         # 7. Format chart transform request (with validation and filtering)
         chart_transform_request = None
+        chart_error_message = None
         try:
             chart_transform_request = format_chart_transform_request(
                 session_id=session_id,
@@ -131,6 +150,7 @@ class IngestService:
                 f"Formatted chart request with {len(chart_transform_request['suggested_charts'])} valid charts"
             )
         except Exception as e:
+            chart_error_message = str(e)
             logger.warning(f"Failed to format chart transform request: {e}")
             # Continue without chart_transform_request (optional feature)
 
@@ -141,9 +161,16 @@ class IngestService:
             info_text=analysis["info_text"],
         )
 
-        # 9. Prepare response data
+        # 9. Determine success message based on chart formatting result
+        if chart_transform_request is not None:
+            success_message = "Archivo analizado con éxito."
+        else:
+            success_message = "El agente no pudo procesar el archivo"
+            logger.error(f"Chart formatting failed: {chart_error_message}")
+
+        # 10. Prepare response data
         response_data = {
-            "message": "Archivo analizado con éxito",
+            "message": success_message,
             "session_id": session_id,
             "columns": analysis["columns"],
             "dtypes": analysis["dtypes"],
@@ -152,7 +179,7 @@ class IngestService:
             "chart_transform_request": chart_transform_request,
         }
 
-        # 10. Conditionally include agent_reply in dev mode
+        # 11. Conditionally include agent_reply in dev mode
         if self.settings.dev_mode == "dev":
             # Ensure agent_reply is always a dict (parse if it's a string)
             if isinstance(agent_reply, str):
