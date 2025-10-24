@@ -8,7 +8,7 @@ class ChartParameters(BaseModel):
     """Parameters for chart generation from agent."""
 
     x_axis: str | None = Field(None, description="X-axis column name")
-    y_axis: str | None = Field(None, description="Y-axis column name")
+    y_axis: str | list[str] | None = Field(None, description="Y-axis column name(s) - single string or list for multi-series charts")
     aggregations: list[dict[str, Any]] | None = Field(None, description="Aggregation functions")
     group_by: list[str] | None = Field(None, description="Columns to group by")
     filters: list[dict[str, Any]] | None = Field(None, description="Filter conditions")

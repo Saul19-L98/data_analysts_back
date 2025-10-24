@@ -3,6 +3,7 @@ from typing import Any
 import pandas as pd
 import logging
 import json
+import math
 
 from app.core.config import Settings
 from app.core.utils import format_bedrock_prompt, generate_session_id
@@ -13,6 +14,67 @@ from app.services.file_parser import FileParserService
 from app.utils.chart_formatting import format_chart_transform_request
 
 logger = logging.getLogger(__name__)
+
+
+def _safe_str_cols(cols: list) -> list[str]:
+    """
+    Convert column names to safe strings, handling NaN and None values.
+    
+    Args:
+        cols: List of column names (may contain NaN, None, or other types)
+        
+    Returns:
+        List of string column names with synthetic names for invalid values
+    """
+    safe = []
+    for i, c in enumerate(cols):
+        # NaN (float) or None → synthetic name
+        if c is None or (isinstance(c, float) and math.isnan(c)):
+            safe.append(f"col_{i}")
+        else:
+            name = str(c).strip()
+            # Replace empty or "Unnamed" columns
+            if not name or name.lower().startswith("unnamed:"):
+                safe.append(f"col_{i}")
+            else:
+                safe.append(name)
+    return safe
+
+
+def _safe_str_dict(d: dict) -> dict[str, str]:
+    """
+    Convert dictionary keys and values to safe strings.
+    
+    Args:
+        d: Dictionary with potentially non-string keys/values
+        
+    Returns:
+        Dictionary with all keys and values as strings
+    """
+    return {str(k): str(v) for k, v in d.items()}
+
+
+def _safe_text_block(x: Any) -> str:
+    """
+    Convert lists/dfs/values to safe text for concatenation.
+    
+    Args:
+        x: Any value that needs to be converted to string
+        
+    Returns:
+        String representation safe for joining
+    """
+    try:
+        # Already a string
+        if isinstance(x, str):
+            return x
+        # List/tuple: join with str()
+        if isinstance(x, (list, tuple)):
+            return "\n".join(str(z) if z is not None else "" for z in x)
+        # Complex dict/obj: JSON with default=str
+        return json.dumps(x, ensure_ascii=False, default=str)
+    except Exception:
+        return str(x)
 
 
 class IngestService:
@@ -93,20 +155,27 @@ class IngestService:
         # 2. Analyze DataFrame
         analysis = self.data_analyzer.analyze(df)
 
-        # 3. Generate session ID
+        # 3. Sanitize analysis data to prevent string join errors
+        safe_columns = _safe_str_cols(analysis["columns"])
+        safe_dtypes = _safe_str_dict(analysis["dtypes"])
+        safe_desc_num = analysis["describe_numeric"]
+        safe_desc_non = analysis["describe_non_numeric"]
+        safe_info_text = _safe_text_block(analysis["info_text"])
+
+        # 4. Generate session ID
         session_id = generate_session_id()
 
-        # 4. Format prompt for Bedrock
+        # 5. Format prompt for Bedrock (using sanitized data)
         prompt = format_bedrock_prompt(
             message=message,
-            columns=analysis["columns"],
-            dtypes=analysis["dtypes"],
-            describe_numeric=analysis["describe_numeric"],
-            describe_non_numeric=analysis["describe_non_numeric"],
-            info_text=analysis["info_text"],
+            columns=safe_columns,
+            dtypes=safe_dtypes,
+            describe_numeric=safe_desc_num,
+            describe_non_numeric=safe_desc_non,
+            info_text=safe_info_text,
         )
 
-        # 5. Print Bedrock payload in dev mode, then invoke agent
+        # 6. Print Bedrock payload in dev mode, then invoke agent
         if self.settings.dev_mode == "dev":
             bedrock_payload = {
                 "agent_id": agent_id,
@@ -168,12 +237,12 @@ class IngestService:
             success_message = "El agente no pudo procesar el archivo"
             logger.error(f"Chart formatting failed: {chart_error_message}")
 
-        # 10. Prepare response data
+        # 10. Prepare response data (use sanitized columns/dtypes)
         response_data = {
             "message": success_message,
             "session_id": session_id,
-            "columns": analysis["columns"],
-            "dtypes": analysis["dtypes"],
+            "columns": safe_columns,
+            "dtypes": safe_dtypes,
             "summary": summary,
             "sent_to_agent": True,
             "chart_transform_request": chart_transform_request,

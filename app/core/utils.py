@@ -81,7 +81,7 @@ def format_bedrock_prompt(
             '      "chart_type": "line|bar|area|pie|donut|scatter|radar|radial",',
             '      "parameters": {',
             '        "x_axis": "nombre_columna",',
-            '        "y_axis": "nombre_columna",',
+            '        "y_axis": "nombre_columna" | ["col1", "col2"],  // string o array para múltiples series',
             '        "aggregations": [{"column": "nombre", "func": "sum|avg|count"}],',
             '        "group_by": ["columna1"],',
             '        "sort": {"by": "columna", "order": "asc|desc"}',
@@ -107,6 +107,8 @@ def format_bedrock_prompt(
             "- Para radar: usa múltiples columnas numéricas en 'series'",
             "- Para scatter: usa dos columnas numéricas (x_axis, y_axis)",
             "- Para donut/pie: usa una columna categórica y agrupa valores numéricos",
+            "- Para gráficos multi-series (comparar varias columnas): usa y_axis como array [\"col1\", \"col2\"]",
+            "- Para gráficos de una sola serie: usa y_axis como string \"columna\"",
             "- NO uses tipos de gráficos no listados (ej: histogram, box, heatmap)",
             "- Responde SOLO JSON, sin explicaciones adicionales",
         ]
