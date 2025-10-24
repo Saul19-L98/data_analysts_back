@@ -9,7 +9,7 @@ services:
     image: data-analyst-back:latest
     container_name: data-analyst-api
     ports:
-      - "8000:8000"
+      - "8080:8080"
     environment:
       # Override with your actual values or use .env file
       - AWS_REGION=${AWS_REGION:-us-east-1}
@@ -27,7 +27,7 @@ services:
     networks:
       - app-network
     healthcheck:
-      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/docs').read()"]
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8080/docs').read()"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -41,7 +41,7 @@ services:
     image: data-analyst-back:dev
     container_name: data-analyst-api-dev
     ports:
-      - "8001:8000"
+      - "8001:8080"
     environment:
       - AWS_REGION=${AWS_REGION:-us-east-1}
       - BEDROCK_AGENT_ID=${BEDROCK_AGENT_ID}

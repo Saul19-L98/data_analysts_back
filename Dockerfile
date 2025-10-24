@@ -64,15 +64,16 @@ ENV PATH="/app/.venv/bin:$PATH"
 # Set Python to run in unbuffered mode (better for Docker logs)
 ENV PYTHONUNBUFFERED=1
 
-# Expose FastAPI port
-EXPOSE 8000
+# Expose FastAPI port (8080 for AWS App Runner compatibility)
+EXPOSE 8080
 
 # Switch to non-root user
 USER appuser
 
 # Health check (optional - FastAPI usually has /health or /docs)
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:8000/docs').read()" || exit 1
+    CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:8080/docs').read()" || exit 1
 
 # Run the application using the venv's python directly (bypasses uv's interpreter detection)
-CMD ["/app/.venv/bin/python", "-m", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+# Using port 8080 for AWS App Runner compatibility
+CMD ["/app/.venv/bin/python", "-m", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8080"]
