@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(xxd \"/c/Users/Usuario/Documents/data/data_analyst_back/docs/logs/31-03-2026_error.md\")"
+    ]
+  }
+}
